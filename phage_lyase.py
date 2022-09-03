@@ -1,3 +1,26 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  phage_lyase.py 
+#
+#  Copyright 2022 Small runze
+#  <small.runze@gmail.com> Small runze
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., HZAU.
+
+
 import argparse
 import os,sys,re
 import subprocess as sub
@@ -460,6 +483,7 @@ if __name__ == "__main__":
     tl.run(cmd_8)
     detete_TMhelix('./cazyme_pfam_cdhit.fasta','./cazyme_pfam_TMhelix.out')
 
+    
     os.system('rm -r ./CAZY_out/ ./hmmer_out/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./TMHMM*/')
     os.remove('./all_protein_cdhit.faa')
     os.remove('./all_protein_cdhit.faa.clstr')
