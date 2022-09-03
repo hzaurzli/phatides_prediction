@@ -13,12 +13,12 @@ from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
 class tools:
     def __init__(self):
-        self.prokka = '/home/runzeli/miniconda3/envs/lyase_env/bin/prokka'
-        self.phispy = '/home/runzeli/miniconda3/envs/lyase_env/bin/PhiSpy.py'
-        self.phanotate = '/home/runzeli/miniconda3/envs/lyase_env/bin/phanotate.py'
+        self.prokka = 'prokka'
+        self.phispy = 'PhiSpy.py'
+        self.phanotate = 'phanotate.py'
         self.cdHit = '/home/runzeli/software/cdhit/cd-hit/cd-hit'
-        self.rundbcan = '/home/runzeli/miniconda3/envs/lyase_env/bin/run_dbcan.py'
-        self.hmmsearch = '/home/runzeli/miniconda3/envs/lyase_env/bin/hmmsearch'
+        self.rundbcan = 'run_dbcan.py'
+        self.hmmsearch = 'hmmsearch'
         self.tmhmm = '/home/runzeli/software/tmhmm/tmhmm-2.0c/bin/tmhmm'
 
 
@@ -291,6 +291,7 @@ if __name__ == "__main__":
 
     tl = tools()
     # step 1 prokka annotates ORFs
+    curr_dir = sub.getoutput('pwd')
     os.chdir(Args.workdir)
     if os.path.isdir('./prokka_result/') == True:
         pass
@@ -303,11 +304,21 @@ if __name__ == "__main__":
     elif target[-1] != '/':
         target = target + '/'
 
+    if target[0] == '.':
+        if target[1] == '/':
+            target_suffix = target[1:]
+        elif target[1] == '.':
+            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            target_suffix = target[2:]
+    else:
+        target_suffix = target
+        curr_dir = ''
+
     type_annotation = Args.type
-    for i in os.listdir('/home/runzeli/rzli/data2/'):
+    for i in os.listdir(curr_dir + target_suffix):
         name = i.split('.')[0]
         suffix = i.split('.')[1]
-        cmd_1 = tl.run_prokka(target + i,
+        cmd_1 = tl.run_prokka(curr_dir + target_suffix + i,
                           './prokka_result/' + name + '/',name,type_annotation)
         tl.run(cmd_1)
 
@@ -327,14 +338,15 @@ if __name__ == "__main__":
         pass
     else:
         os.mkdir('./ppn/')
-    fna_suffix = os.path.splitext(os.listdir(target)[0])[-1]
+
+    fna_suffix = os.path.splitext(os.listdir(curr_dir + target_suffix)[0])[-1]
     for i in os.listdir('./phispy_out/'):
         if os.path.isdir('./ppn/' + i) == True:
             pass
         else:
             os.mkdir('./ppn/' + i)
         prophage_select('./phispy_out/'+ i + '/' + i + '_prophage_coordinates.tsv',
-                        target + i + fna_suffix,'./ppn/' + i + '/' + i)
+                        curr_dir + target_suffix + i + fna_suffix,'./ppn/' + i + '/' + i)
 
 
     # step 4 phanotate annotates prophage ORFs
@@ -380,8 +392,24 @@ if __name__ == "__main__":
     molecular_weight('./all_protein_cdhit.faa','./all_protein_cdhit_filter.faa')
 
     # step 8 scan CAZY database
+    cazy_db = Args.cazy_db
+    if cazy_db[-1] == '/':
+        cazy_db = cazy_db
+    elif cazy_db[-1] != '/':
+        cazy_db = cazy_db + '/'
+
+    if cazy_db[0] == '.':
+        if cazy_db[1] == '/':
+            cazy_db_suffix = cazy_db[1:]
+        elif cazy_db[1] == '.':
+            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            cazy_db_suffix = cazy_db[2:]
+    else:
+        cazy_db_suffix = cazy_db
+        curr_dir = ''
+
     cmd_5 = tl.scan_dbscan('./all_protein_cdhit_filter.faa','./CAZY_out/',
-                           Args.cazy_db)
+                           curr_dir + cazy_db_suffix)
     tl.run(cmd_5)
 
     find_cazyme('./all_protein_cdhit_filter.faa','./CAZY_out/overview.txt')
@@ -393,12 +421,34 @@ if __name__ == "__main__":
     else:
         os.mkdir('./hmmer_out/')
 
+    hmmer_db = Args.hmmer_db
+    if hmmer_db[0] == '.':
+        if hmmer_db[1] == '/':
+            hmmer_db_suffix = hmmer_db[1:]
+        elif hmmer_db[1] == '.':
+            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            hmmer_db_suffix = hmmer_db[2:]
+    else:
+        hmmer_db_suffix = hmmer_db
+        curr_dir = ''
+
     cmd_6 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
-                             Args.hmmer_db,
+                             curr_dir + hmmer_db_suffix,
                              './all_protein_cdhit_filter.faa')
     tl.run(cmd_6)
 
-    find_pfam('./all_protein_cdhit_filter.faa', Args.reported_lyase)
+    reported_lyase = Args.reported_lyase
+    if reported_lyase[0] == '.':
+        if reported_lyase[1] == '/':
+            reported_lyase_suffix = reported_lyase[1:]
+        elif reported_lyase[1] == '.':
+            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            reported_lyase_suffix = reported_lyase[2:]
+    else:
+        reported_lyase_suffix = reported_lyase
+        curr_dir = ''
+
+    find_pfam('./all_protein_cdhit_filter.faa', curr_dir + reported_lyase_suffix)
 
     # step 10 combine results of CAZY and pfam and cdhit clustering
     os.system('cat all_protein_filter_cazyme.fasta all_protein_pfam_protein.fasta > cazyme_pfam.fasta')
