@@ -64,7 +64,7 @@ class tools:
         return cmd
 
     def run_cdhit(self,inputfile, out, cutoff):
-        cmd = '%s -i %s -o %s -c %s' % (self.cdHit, inputfile, out, cutoff)
+        cmd = '%s -i %s -o %s -c %s -M 0' % (self.cdHit, inputfile, out, cutoff)
         return cmd
 
     def scan_dbscan(self,inputfile, out, db):
@@ -81,32 +81,33 @@ class tools:
 
 
 def prophage_select(prophage_input,fna_input,ppn_out):
-    info_file = open(prophage_input, "r")
-    info_list = []
-    for i in info_file:
-        data = i.strip().split('\t')
-        pp_num = data[0]
-        contig = data[1]
-        info_s = data[2]
-        info_e = data[3]
-        info_list.append((pp_num, contig, info_s, info_e))
+    if os.path.exists(prophage_input):
+        info_file = open(prophage_input, "r")
+        info_list = []
+        for i in info_file:
+            data = i.strip().split('\t')
+            pp_num = data[0]
+            contig = data[1]
+            info_s = data[2]
+            info_e = data[3]
+            info_list.append((pp_num, contig, info_s, info_e))
 
-    for record in SeqIO.parse(fna_input, 'fasta'):
-        Contig_ID = record.id
-        Desp = record.description.split(",")[0]
-        for i in info_list:
-            pp_num = i[0]
-            contig = i[1]
-            info_s = i[2]
-            info_e = i[3]
-            if contig == Contig_ID:
-                file_name_use = ppn_out
-                out_file = open(file_name_use + "_" + str(pp_num) + ".fasta", "a")
-                gene_seq = record.seq[int(info_s) - 1: int(info_e)]
-                element_record = SeqRecord(gene_seq, id=pp_num, description=Desp)
-                SeqIO.write(element_record, out_file, "fasta")
-                out_file.close()
-    info_file.close()
+        for record in SeqIO.parse(fna_input, 'fasta'):
+            Contig_ID = record.id
+            Desp = record.description.split(",")[0]
+            for i in info_list:
+                pp_num = i[0]
+                contig = i[1]
+                info_s = i[2]
+                info_e = i[3]
+                if contig == Contig_ID:
+                    file_name_use = ppn_out
+                    out_file = open(file_name_use + "_" + str(pp_num) + ".fasta", "a")
+                    gene_seq = record.seq[int(info_s) - 1: int(info_e)]
+                    element_record = SeqRecord(gene_seq, id=pp_num, description=Desp)
+                    SeqIO.write(element_record, out_file, "fasta")
+                    out_file.close()
+        info_file.close()
 
 
 def Gene_element_abstract(ppn_out,ppn_fa,ppn_ffn):
@@ -169,13 +170,13 @@ def molecular_weight(protein_fa,protein_filter_fa):
         Seq_use = record.seq
         Desp = record.description
         protein_seq = str(Seq_use)
-        X = ProteinAnalysis(protein_seq)
-        MW_cal = "%0.2f" % X.molecular_weight()
-
-        if 'X' not in protein_seq or '*' not in protein_seq[:-1] and float(MW_cal) <= 40000:
-            element_record = SeqRecord(Seq_use, id=ID_contig, description=Desp)
-            SeqIO.write(element_record, out_file, "fasta")
-            molecular_weight.write(ID_contig + "\t" + MW_cal + "\n")
+        if 'X' not in protein_seq and '*' not in protein_seq[:-1]:
+            X = ProteinAnalysis(protein_seq)
+            MW_cal = "%0.2f" % X.molecular_weight()
+            if float(MW_cal) <= 40000:
+                element_record = SeqRecord(Seq_use, id=ID_contig, description=Desp)
+                SeqIO.write(element_record, out_file, "fasta")
+                molecular_weight.write(ID_contig + "\t" + MW_cal + "\n")
 
     protein_fa_info.close()
     molecular_weight.close()
@@ -209,13 +210,14 @@ def find_pfam(cdhit_filter,lyase_list):
     info_file = open('./hmmer_out/all_protein_filter_hmmer_out.txt', "r")
     info_file_two = open(lyase_list, "r")
 
-    f2 = open(r'./hmmer_out/all_protein_filter_hmmer_out.txt', 'w')
+    f2 = open(r'./hmmer_out/all_protein_filter_hmmer_out2.txt', 'w')
     for i in info_file:
         line = re.split('\s+', i)
         new_line = ' '.join(line)
         new_line = new_line.strip(' ')
-        f2.write(new_line)
-        f2.write("\n")
+        if new_line[0] != '#':
+            f2.write(new_line)
+            f2.write("\n")
     info_file.close()
     f2.close()
 
@@ -225,7 +227,7 @@ def find_pfam(cdhit_filter,lyase_list):
         pfam_num_reported = str(data2)
         info_pfam_list.append(pfam_num_reported)
 
-    info_file_new = open(r'./hmmer_out/all_protein_filter_hmmer_out.txt', 'r')
+    info_file_new = open(r'./hmmer_out/all_protein_filter_hmmer_out2.txt', 'r')
     info_list = []
     for j in info_file_new:
         data1 = j.strip().split(' ')
@@ -322,6 +324,7 @@ if __name__ == "__main__":
         os.mkdir('./prokka_result/')
 
     target = Args.path
+    curr_dir_target = curr_dir
     if target[-1] == '/':
         target = target
     elif target[-1] != '/':
@@ -331,17 +334,17 @@ if __name__ == "__main__":
         if target[1] == '/':
             target_suffix = target[1:]
         elif target[1] == '.':
-            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            curr_dir_target = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
             target_suffix = target[2:]
     else:
         target_suffix = target
-        curr_dir = ''
+        curr_dir_target = ''
 
     type_annotation = Args.type
-    for i in os.listdir(curr_dir + target_suffix):
+    for i in os.listdir(curr_dir_target + target_suffix):
         name = i.split('.')[0]
         suffix = i.split('.')[1]
-        cmd_1 = tl.run_prokka(curr_dir + target_suffix + i,
+        cmd_1 = tl.run_prokka(curr_dir_target + target_suffix + i,
                           './prokka_result/' + name + '/',name,type_annotation)
         tl.run(cmd_1)
 
@@ -362,14 +365,14 @@ if __name__ == "__main__":
     else:
         os.mkdir('./ppn/')
 
-    fna_suffix = os.path.splitext(os.listdir(curr_dir + target_suffix)[0])[-1]
+    fna_suffix = os.path.splitext(os.listdir(curr_dir_target + target_suffix)[0])[-1]
     for i in os.listdir('./phispy_out/'):
         if os.path.isdir('./ppn/' + i) == True:
             pass
         else:
             os.mkdir('./ppn/' + i)
         prophage_select('./phispy_out/'+ i + '/' + i + '_prophage_coordinates.tsv',
-                        curr_dir + target_suffix + i + fna_suffix,'./ppn/' + i + '/' + i)
+                        curr_dir_target + target_suffix + i + fna_suffix,'./ppn/' + i + '/' + i)
 
 
     # step 4 phanotate annotates prophage ORFs
@@ -418,21 +421,20 @@ if __name__ == "__main__":
     cazy_db = Args.cazy_db
     if cazy_db[-1] == '/':
         cazy_db = cazy_db
-    elif cazy_db[-1] != '/':
+    else:
         cazy_db = cazy_db + '/'
-
     if cazy_db[0] == '.':
         if cazy_db[1] == '/':
             cazy_db_suffix = cazy_db[1:]
         elif cazy_db[1] == '.':
-            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            curr_dir_cazydb = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
             cazy_db_suffix = cazy_db[2:]
     else:
         cazy_db_suffix = cazy_db
-        curr_dir = ''
+        curr_dir_cazydb = ''
 
     cmd_5 = tl.scan_dbscan('./all_protein_cdhit_filter.faa','./CAZY_out/',
-                           curr_dir + cazy_db_suffix)
+                           curr_dir_cazydb + cazy_db_suffix)
     tl.run(cmd_5)
 
     find_cazyme('./all_protein_cdhit_filter.faa','./CAZY_out/overview.txt')
@@ -449,14 +451,14 @@ if __name__ == "__main__":
         if hmmer_db[1] == '/':
             hmmer_db_suffix = hmmer_db[1:]
         elif hmmer_db[1] == '.':
-            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            curr_dir_hmmerdb = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
             hmmer_db_suffix = hmmer_db[2:]
     else:
         hmmer_db_suffix = hmmer_db
-        curr_dir = ''
+        curr_dir_hmmerdb = ''
 
     cmd_6 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
-                             curr_dir + hmmer_db_suffix,
+                             curr_dir_hmmerdb + hmmer_db_suffix,
                              './all_protein_cdhit_filter.faa')
     tl.run(cmd_6)
 
@@ -465,13 +467,13 @@ if __name__ == "__main__":
         if reported_lyase[1] == '/':
             reported_lyase_suffix = reported_lyase[1:]
         elif reported_lyase[1] == '.':
-            curr_dir = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
+            curr_dir_rp = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
             reported_lyase_suffix = reported_lyase[2:]
     else:
         reported_lyase_suffix = reported_lyase
-        curr_dir = ''
+        curr_dir_rp = ''
 
-    find_pfam('./all_protein_cdhit_filter.faa', curr_dir + reported_lyase_suffix)
+    find_pfam('./all_protein_cdhit_filter.faa', curr_dir_rp + reported_lyase_suffix)
 
     # step 10 combine results of CAZY and pfam and cdhit clustering
     os.system('cat all_protein_filter_cazyme.fasta all_protein_pfam_protein.fasta > cazyme_pfam.fasta')
@@ -496,10 +498,3 @@ if __name__ == "__main__":
     os.remove('./cazyme_pfam_cdhit.fasta.clstr')
     os.remove('./cazyme_pfam.fasta')
     os.remove('./cazyme_pfam_TMhelix.out')
-
-
-
-
-
-
-
