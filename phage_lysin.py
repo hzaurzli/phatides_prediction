@@ -52,7 +52,7 @@ class tools:
         return p.returncode
 
     def run_prokka(self, fastain, fastaout, prefix, type_annotation):
-        cmd = '%s %s -o %s --prefix %s --kingdom %s' % (self.prokka, fastain, fastaout,prefix,type_annotation)
+        cmd = '%s %s -o %s --prefix %s --kingdom %s -force' % (self.prokka, fastain, fastaout,prefix,type_annotation)
         return cmd
 
     def run_phispy(self, gbk_input, out, profix, phage_genes):
