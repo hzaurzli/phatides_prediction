@@ -426,6 +426,7 @@ if __name__ == "__main__":
     if cazy_db[0] == '.':
         if cazy_db[1] == '/':
             cazy_db_suffix = cazy_db[1:]
+            curr_dir_cazydb = curr_dir
         elif cazy_db[1] == '.':
             curr_dir_cazydb = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
             cazy_db_suffix = cazy_db[2:]
