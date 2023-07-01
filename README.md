@@ -2,11 +2,14 @@
 ## Install the software
 ```
 # install env
-conda env create -f lysin_env.yml
+conda env create -f phatides_prediction_env.yml
 
 # activate env
-source activate lysin_env
+source activate phatides_prediction_env
+```
 
+If your perl version is not 5.22, please install perl=5.22
+```
 # install perl 5.22
 conda install -c anaconda perl=5.22
 ```
@@ -14,8 +17,16 @@ conda install -c anaconda perl=5.22
 ## prediction
 ```
 # activate env
-source activate lysin_env
+source activate phatides_prediction_env
 
 # run
-python phage_lysin.py -p /.../input_path/ -t Bacteria -hd ./db/hmm/lysin_reported.hmm -cd ./db/cazy/db/ -rl ./db/hmm/lysin_reported.txt -wkdir ./test/
+python lysin_finder.py
+  -p /.../input_path/                               # genome sequnce path
+  -t Bacteria                                       # prokka kingdom type    
+  -hd ./db/hmm/lysin_reported.hmm                   # hmmer database path
+  -rl ./db/hmm/lysin_reported.txt                   # reported lysin structures(hmm files)
+  -cd ./db/cazy/db/                                 # cazy database path
+  -wkdir ./test/                                    # work directory
+  -ml 10000                                         # lower proteins molecular weight
+  -mu 40000                                         # upper proteins molecular weight
 ```
