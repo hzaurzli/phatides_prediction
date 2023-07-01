@@ -1,4 +1,4 @@
-# lysin_prediction
+# Phatides_prediction
 ## Install the software
 ```
 # install env
@@ -32,7 +32,7 @@ python phatides_prediction.py
 ```
 
 ## Bactericidal activity scoring 
-### 1. sequence to vector
+### 1. Get different peptides
 ```
 perl format.pl input.fa none > input.txt
 ```
