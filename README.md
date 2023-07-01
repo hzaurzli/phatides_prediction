@@ -34,17 +34,17 @@ python phatides_prediction.py
 ## Bactericidal activity scoring 
 ### 1. Get different peptides
 ```
-python peptides_split.py -i input.fa -o output.fa -mi 6 -ma 50 > output.fa
+python peptides_split.py -i putative_PGHs.fa -o putative_PGHs.fa -mi 6 -ma 50
 ```
 
 ### 2. Sequence to vector
 ```
-perl format.pl input.fa none > input.txt
+perl format.pl putative_PGHs.fa none > putative_PGHs.txt
 ```
 
 ### 3. Scoring
 ```
-python prediction_lstm.py input.txt input.out
+python prediction_lstm.py putative_PGHs.txt putative_PGHs.out
 ```
 
 **If you use prediction_lstm.py please cite [Identification of antimicrobial peptides from the human gut microbiome using deep learning](https://www.nature.com/articles/s41587-022-01226-0)**
