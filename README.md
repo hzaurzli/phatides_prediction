@@ -14,7 +14,7 @@ If your perl version is not 5.22, please install perl=5.22
 conda install -c anaconda perl=5.22
 ```
 
-## prediction
+## Prediction
 ```
 # activate env
 source activate phatides_prediction_env
