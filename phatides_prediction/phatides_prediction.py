@@ -290,7 +290,7 @@ def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
         if (protein_type_dele == "TMhelix") and (gen_id_dele_last in info_list):
             info_list.remove(gen_id_dele_last)
 
-    out_file = open("putative_lysins.fa", "a")
+    out_file = open("putative_PGHs.fa", "a")
     for record in SeqIO.parse(input_file, 'fasta'):
         Contig_ID = record.id
         Desp = record.description
