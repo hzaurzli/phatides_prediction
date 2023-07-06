@@ -306,7 +306,7 @@ def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="phatides prediction")
-    parser.add_argument("-p", "--path", required=True, type=str, help="genome sequnce path")
+    parser.add_argument("-p", "--path", required=True, type=str, help="genome sequence path")
     parser.add_argument("-t", "--type", required=True, type=str, help="prokka kingdom type")
     parser.add_argument("-c", "--cdhit_cutoff", default=0.95,required=False, type=float, help="cdhit cluster cutoff")
     parser.add_argument("-hc", "--hmmer_cutoff", default=1e-5,required=False, type=float, help="hmmer search cutoff")
