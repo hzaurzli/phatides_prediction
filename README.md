@@ -14,6 +14,25 @@ If your perl version is not 5.22, please install perl=5.22
 conda install -c anaconda perl=5.22
 ```
 
+### Change suffix
+***Notice:*** **Genome fasta file suffix is ```.fna```, to see example in Data fold**
+
+***If Genome fasta file suffix is not ```.fna```, you can run :***
+```
+# Rename
+python rename_suffix.py -p ./data/ -s fasta
+
+usage: rename_suffix.py [-h] -p PATH -s SUFFIX
+suffix rename
+options:
+  -h, --help            show this help message and exit
+  -p PATH, --path PATH  genome sequence path
+  -s SUFFIX, --suffix SUFFIX
+                        old suffix/To be modified suffix
+
+```
+For example, if fasta file's suffix is '.fasta', run ```python rename_suffix.py -p ./data/ -s fasta```, that can change suffix '.fasta' into '.fna'
+
 ## Prediction
 ```
 # activate env
