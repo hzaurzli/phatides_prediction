@@ -48,6 +48,7 @@ python phatides_prediction.py
   -wkdir ./test/                                    # work directory
   -ml 10000                                         # lower proteins molecular weight
   -mu 40000                                         # upper proteins molecular weight
+  -bp B                                             # 'B' for bacteria, 'P' for phage"
 ```
 
 ## Bactericidal activity scoring 
