@@ -441,14 +441,14 @@ if __name__ == "__main__":
         os.system('cat ./orf_ffn/* > all_protein_ut.faa')
         
         fa_dict = fasta2dict('./all_protein_ut.faa')
+        filters = ["B","Z","J","O","U","X",'*']
 
         with open('./all_protein.faa','w') as f:
             for key in fa_dict:
-                if '*' not in fa_dict[key]:
+                if all(f not in fa_dict[key] for f in filters):
                     line = key + '\n' + fa_dict[key] + '\n'
                     f.write(line)
         f.close()
-
 
         # step 6 cdhit cluster
         cmd_4 = tl.run_cdhit('./all_protein.faa','./all_protein_cdhit.faa',Args.cdhit_cutoff)
@@ -685,14 +685,15 @@ if __name__ == "__main__":
         os.system('cat ./phage_faa/* > all_protein_ut.faa')
         
         fa_dict = fasta2dict('./all_protein_ut.faa')
+        filters = ["B","Z","J","O","U","X",'*']
 
         with open('./all_protein.faa','w') as f:
             for key in fa_dict:
-                if '*' not in fa_dict[key]:
+                if all(f not in fa_dict[key] for f in filters):
                     line = key + '\n' + fa_dict[key] + '\n'
                     f.write(line)
         f.close()
-
+        
         # step 4 cdhit cluster
         cmd_4 = tl.run_cdhit('./all_protein.faa','./all_protein_cdhit.faa',Args.cdhit_cutoff)
         tl.run(cmd_4)
