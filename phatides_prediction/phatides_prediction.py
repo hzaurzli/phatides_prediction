@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  phatides_prediction.py 
+#  Lysin_finder.py 
 #
 #  Copyright 2022 Small runze
 #  <small.runze@gmail.com> Small runze
@@ -28,6 +28,7 @@ from subprocess import *
 import subprocess as sub
 import glob
 import shutil
+import biolib
 from Bio import SeqIO
 from Bio import AlignIO
 from Bio.Seq import Seq
@@ -36,14 +37,14 @@ from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
 
 class tools:
-    def __init__(self,tmhmm):
+    def __init__(self):
         self.prokka = 'prokka'
         self.phispy = 'PhiSpy.py'
         self.phanotate = 'phanotate.py'
         self.cdHit = 'cd-hit'
         self.rundbcan = 'run_dbcan.py'
         self.hmmsearch = 'hmmsearch'
-        self.tmhmm = tmhmm
+        self.deeptmhmm = 'biolib run DTU/DeepTMHMM'
 
 
     def run(self, cmd, wkdir=None):
@@ -75,9 +76,9 @@ class tools:
     def run_hmmsearch(self,tblout, e_val,hmm ,inputfile):
         cmd = '%s --tblout %s -E %s --cpu 2 %s %s' % (self.hmmsearch, tblout, e_val, hmm,inputfile)
         return cmd
-
-    def run_tmhmm(self,input_fa,out):
-        cmd = '%s %s > %s' % (self.tmhmm,input_fa,out)
+        
+    def run_deeptmhmm(self,fa):
+        cmd = '%s --fasta %s' % (self.deeptmhmm,fa)
         return cmd
 
 
@@ -162,19 +163,6 @@ def Gene_element_abstract(ppn_out,ppn_fa,ppn_ffn):
     out_file.close()
 
 
-def fasta2dict(fasta_name):
-    with open(fasta_name) as fa:
-        fa_dict = {}
-        for line in fa:
-            line = line.replace('\n', '')
-            if line.startswith('>'):
-              seq_name = line[0:]
-              fa_dict[seq_name] = ''
-            else:
-              fa_dict[seq_name] += line.replace('\n', '')
-    return fa_dict
-
-
 def molecular_weight(protein_fa,protein_filter_fa,MWU,MWL):
     protein_fa_info = open(protein_fa, "r")
     out_file = open(protein_filter_fa, "a")
@@ -218,6 +206,21 @@ def find_cazyme(cdhit_filter,cazy_overview):
     input_file.close()
     info_file.close()
 
+
+
+def fasta2dict(fasta_name):
+    with open(fasta_name) as fa:
+        fa_dict = {}
+        for line in fa:
+            line = line.replace('\n', '')
+            if line.startswith('>'):
+              seq_name = line[0:]
+              fa_dict[seq_name] = ''
+            else:
+              fa_dict[seq_name] += line.replace('\n', '')
+    return fa_dict
+
+    
 
 def find_pfam(cdhit_filter,lyase_list):
     input_file = open(cdhit_filter, "r")
@@ -267,6 +270,103 @@ def find_pfam(cdhit_filter,lyase_list):
     out_file.close()
 
 
+def find_pfam_EAD(cdhit_filter,lyase_list):
+    input_file = open(cdhit_filter, "r")
+    info_file = open('./hmmer_out_EAD/all_protein_filter_hmmer_out_EAD.txt', "r")
+    info_file_two = open(lyase_list, "r")
+
+    f2 = open(r'./hmmer_out_EAD/all_protein_filter_hmmer_out2_EAD.txt', 'w')
+    for i in info_file:
+        line = re.split('\s+', i)
+        new_line = ' '.join(line)
+        new_line = new_line.strip(' ')
+        if new_line[0] != '#':
+            f2.write(new_line)
+            f2.write("\n")
+    info_file.close()
+    f2.close()
+
+    info_pfam_list = []
+    for i in info_file_two:
+        data2 = i.strip()
+        pfam_num_reported = str(data2)
+        info_pfam_list.append(pfam_num_reported)
+
+    info_file_new = open(r'./hmmer_out_EAD/all_protein_filter_hmmer_out2_EAD.txt', 'r')
+    info_list = []
+    for j in info_file_new:
+        data1 = j.strip().split(' ')
+        gen_id = str(data1[0])
+        pfam_num = str(data1[3])
+        for k in info_pfam_list:
+            if k in pfam_num:
+                info_list.append(gen_id)
+
+    out_file = open("./all_protein_pfam_protein_EAD.fasta", "a")
+    for record in SeqIO.parse(input_file, 'fasta'):
+        Contig_ID = record.id
+        Desp = record.description
+        for i in info_list:
+            gen_id = i
+            if gen_id == Contig_ID:
+                gene_seq = record.seq
+                element_record = SeqRecord(gene_seq, id='', description=Desp)
+                SeqIO.write(element_record, out_file, "fasta")
+    input_file.close()
+    info_file_new.close()
+    info_file_two.close()
+    out_file.close()
+
+
+def find_pfam_peptidases(cdhit_filter,lyase_list):
+    input_file = open(cdhit_filter, "r")
+    info_file = open('./hmmer_out_peptidases/all_protein_filter_hmmer_out_peptidases.txt', "r")
+    info_file_two = open(lyase_list, "r")
+
+    f2 = open(r'./hmmer_out_peptidases/all_protein_filter_hmmer_out2_peptidases.txt', 'w')
+    for i in info_file:
+        line = re.split('\s+', i)
+        new_line = ' '.join(line)
+        new_line = new_line.strip(' ')
+        if new_line[0] != '#':
+            f2.write(new_line)
+            f2.write("\n")
+    info_file.close()
+    f2.close()
+
+    info_pfam_list = []
+    for i in info_file_two:
+        data2 = i.strip()
+        pfam_num_reported = str(data2)
+        info_pfam_list.append(pfam_num_reported)
+
+    info_file_new = open(r'./hmmer_out_peptidases/all_protein_filter_hmmer_out2_peptidases.txt', 'r')
+    info_list = []
+    for j in info_file_new:
+        data1 = j.strip().split(' ')
+        gen_id = str(data1[0])
+        pfam_num = str(data1[3])
+        for k in info_pfam_list:
+            if k in pfam_num:
+                info_list.append(gen_id)
+
+    out_file = open("./all_protein_pfam_protein_peptidases.fasta", "a")
+    for record in SeqIO.parse(input_file, 'fasta'):
+        Contig_ID = record.id
+        Desp = record.description
+        for i in info_list:
+            gen_id = i
+            if gen_id == Contig_ID:
+                gene_seq = record.seq
+                element_record = SeqRecord(gene_seq, id='', description=Desp)
+                SeqIO.write(element_record, out_file, "fasta")
+    input_file.close()
+    info_file_new.close()
+    info_file_two.close()
+    out_file.close()
+
+
+
 def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
     input_file = open(cdhit_fasta, "r")
     info_file = open(cazyme_pfam_TMhelix, "r")
@@ -303,7 +403,7 @@ def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
         if (protein_type_dele == "TMhelix") and (gen_id_dele_last in info_list):
             info_list.remove(gen_id_dele_last)
 
-    out_file = open("putative_PGHs.fa", "a")
+    out_file = open("putative_lysins.fa", "a")
     for record in SeqIO.parse(input_file, 'fasta'):
         Contig_ID = record.id
         Desp = record.description
@@ -315,6 +415,32 @@ def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
                 SeqIO.write(element_record, out_file, "fasta")
     input_file.close()
     out_file.close()
+    
+    
+def remove_TMhelix(TMhelix_path,fa,fa_out):
+  f = open(TMhelix_path)
+  lis = []
+  for i in f:
+    if i.startswith('>'):
+      type = i.strip().split(' ')[2]
+      if type == 'GLOB':
+        id = i.strip().split(' ')[0]
+        lis.append(id)
+
+  fi = fasta2dict(fa)
+  if len(lis) == 0:
+      with open(fa_out,'w') as w:
+          line = 'All lysins have TMhelix'
+          w.write(line)
+      w.close()
+  else:
+      with open(fa_out,'w') as w:
+        for key in fi:
+          for id in lis:
+            if id in key:
+              line = key + '\n' + fi[key] + '\n'
+              w.write(line)
+      w.close()
 
 
 if __name__ == "__main__":
@@ -325,14 +451,11 @@ if __name__ == "__main__":
     parser.add_argument("-hc", "--hmmer_cutoff", default=1e-5,required=False, type=float, help="hmmer search cutoff")
     parser.add_argument("-hd", "--hmmer_db", required=True, type=str, help="reported lysin structures hmmer database path")
     parser.add_argument("-rl", "--reported_lysin", required=True, type=str, help="reported lysin structures(hmm files)")
-    parser.add_argument("-cd", "--cazy_db", required=True, type=str, help="cazy database path")
     parser.add_argument("-wkdir", "--workdir", required=True, type=str, help="work directory")
     parser.add_argument("-mu", "--MWU", required=False, default=40000, type=float, help="upper proteins molecular weight")
     parser.add_argument("-ml", "--MWL", required=False, default=10000, type=float, help="lower proteins molecular weight")
     parser.add_argument("-hde", "--hmmer_db_EAD", required=True, type=str, help="EAD hmmer database path")
     parser.add_argument("-rle", "--reported_lysin_EAD", required=True, type=str, help="reported lysin EAD structures(hmm files)")
-    parser.add_argument("-hdp", "--hmmer_db_peptidases", required=True, type=str, help="peptidases hmmer database path")
-    parser.add_argument("-rlp", "--reported_lysin_peptidases", required=True, type=str, help="reported lysin peptidases structures(hmm files)")
     parser.add_argument("-bp", "--bacteriaORphage", required=True, type=str, help="bacteria pipeline or phage pipeline('B' for bacteria, 'P' for phage")
     Args = parser.parse_args()
     
@@ -350,8 +473,7 @@ if __name__ == "__main__":
             os.mkdir(os.path.dirname(os.path.abspath(Args.workdir)) +'/' + resultdir + '/')
         
         
-        path_t = os.path.dirname(sub.getoutput('find ~/ -name lysin_finder.py'))
-        tl = tools(path_t + '/tmhmm/tmhmm-2.0c/bin/tmhmm')
+        tl = tools()
         # step 1 prokka annotates ORFs
         curr_dir = sub.getoutput('pwd')
         os.chdir(Args.workdir)
@@ -457,30 +579,8 @@ if __name__ == "__main__":
         # step 7 calculate molecular weight
         molecular_weight('./all_protein_cdhit.faa','./all_protein_cdhit_filter.faa', float(Args.MWU),float(Args.MWL))
 
-        # step 8 scan CAZY database
-        cazy_db = Args.cazy_db
-        if cazy_db[-1] == '/':
-            cazy_db = cazy_db
-        else:
-            cazy_db = cazy_db + '/'
-        if cazy_db[0] == '.':
-            if cazy_db[1] == '/':
-                cazy_db_suffix = cazy_db[1:]
-                curr_dir_cazydb = curr_dir
-            elif cazy_db[1] == '.':
-                curr_dir_cazydb = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                cazy_db_suffix = cazy_db[2:]
-        else:
-            cazy_db_suffix = cazy_db
-            curr_dir_cazydb = ''
 
-        cmd_5 = tl.scan_dbscan('./all_protein_cdhit_filter.faa','./CAZY_out/',
-                               curr_dir_cazydb + cazy_db_suffix)
-        tl.run(cmd_5)
-
-        find_cazyme('./all_protein_cdhit_filter.faa','./CAZY_out/overview.txt')
-
-        # step 9 hmmsearch reported lysin structure in pfam
+        # step 8 hmmsearch reported lysin structure in pfam
         if os.path.isdir('./hmmer_out/') == True:
             pass
         else:
@@ -498,10 +598,10 @@ if __name__ == "__main__":
             hmmer_db_suffix = hmmer_db
             curr_dir_hmmerdb = ''
 
-        cmd_6 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
+        cmd_5 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
                                  curr_dir_hmmerdb + hmmer_db_suffix,
                                  './all_protein_cdhit_filter.faa')
-        tl.run(cmd_6)
+        tl.run(cmd_5)
 
         reported_lysin = Args.reported_lysin
         if reported_lysin[0] == '.':
@@ -518,7 +618,7 @@ if __name__ == "__main__":
         find_pfam('./all_protein_cdhit_filter.faa', curr_dir_rp + reported_lysin_suffix)
         
         
-        # step 10 Filter sequence without EAD
+        # step 9 Filter sequences without EAD
         if os.path.isdir('./hmmer_out_EAD/') == True:
             pass
         else:
@@ -536,10 +636,10 @@ if __name__ == "__main__":
             hmmer_db_EAD_suffix = hmmer_db_EAD
             curr_dir_hmmerdb_EAD = ''
 
-        cmd_7 = tl.run_hmmsearch('./hmmer_out_EAD/all_protein_filter_hmmer_out_EAD.txt', Args.hmmer_cutoff,
+        cmd_6 = tl.run_hmmsearch('./hmmer_out_EAD/all_protein_filter_hmmer_out_EAD.txt', Args.hmmer_cutoff,
                                  curr_dir_hmmerdb_EAD + hmmer_db_EAD_suffix,
                                  './all_protein_pfam_protein.fasta')
-        tl.run(cmd_7)
+        tl.run(cmd_6)
 
         reported_lysin_EAD = Args.reported_lysin_EAD
         if reported_lysin_EAD[0] == '.':
@@ -555,67 +655,29 @@ if __name__ == "__main__":
 
         find_pfam_EAD('./all_protein_pfam_protein.fasta', curr_dir_rpe + reported_lysin_EAD_suffix)
         
-            
-        # step 11 Find peptidases
-        if os.path.isdir('./hmmer_out_peptidases/') == True:
-            pass
-        else:
-            os.mkdir('./hmmer_out_peptidases/')
 
-        hmmer_db_peptidases = Args.hmmer_db_peptidases
-        if hmmer_db_peptidases[0] == '.':
-            if hmmer_db_peptidases[1] == '/':
-                hmmer_db_peptidases_suffix = hmmer_db_peptidases[1:]
-                curr_dir_hmmerdb_peptidases = curr_dir
-            elif hmmer_db_peptidases[1] == '.':
-                curr_dir_hmmerdb_peptidases = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                hmmer_db_peptidases_suffix = hmmer_db_peptidases[2:]
-        else:
-            hmmer_db_peptidases_suffix = hmmer_db_peptidases
-            curr_dir_hmmerdb_peptidases = ''
+        # step 10 combine results of CAZY and pfam
+        os.system('cat all_protein_pfam_protein_EAD.fasta > pfam_EAD.fasta')
+        cmd_7 = tl.run_cdhit('./pfam_EAD.fasta', './pfam_EAD_cdhit.fasta', int(1))
+        tl.run(cmd_7)
 
-        cmd_8 = tl.run_hmmsearch('./hmmer_out_peptidases/all_protein_filter_hmmer_out_peptidases.txt', Args.hmmer_cutoff,
-                                 curr_dir_hmmerdb_peptidases + hmmer_db_peptidases_suffix,
-                                 './all_protein_cdhit_filter.faa')
+        # step 11 remove TMhelix
+        cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
         tl.run(cmd_8)
-
-        reported_lysin_peptidases = Args.reported_lysin_peptidases
-        if reported_lysin_peptidases[0] == '.':
-            if reported_lysin_peptidases[1] == '/':
-                reported_lysin_peptidases_suffix = reported_lysin_peptidases[1:]
-                curr_dir_rpp = curr_dir
-            elif reported_lysin_peptidases[1] == '.':
-                curr_dir_rpp = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                reported_lysin_peptidases_suffix = reported_lysin_peptidases[2:]
-        else:
-            reported_lysin_peptidases_suffix = reported_lysin_peptidases
-            curr_dir_rpp = ''
-
-        find_pfam_peptidases('./all_protein_cdhit_filter.faa', curr_dir_rpp + reported_lysin_peptidases_suffix)
-
-        # step 12 combine results of CAZY and pfam
-        os.system('cat all_protein_filter_cazyme.fasta all_protein_pfam_protein_EAD.fasta all_protein_pfam_protein_peptidases.fasta > cazyme_pfam_EAD_peptidases.fasta')
-        cmd_9 = tl.run_cdhit('./cazyme_pfam_EAD_peptidases.fasta', './cazyme_pfam_EAD_peptidases_cdhit.fasta', int(1))
-        tl.run(cmd_9)
-
-        # step 13 remove TMhelix
-        cmd_10 = tl.run_tmhmm('./cazyme_pfam_EAD_peptidases_cdhit.fasta','./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
-        tl.run(cmd_10)
-        detete_TMhelix('./cazyme_pfam_EAD_peptidases_cdhit.fasta','./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
+        remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
 
         
-        os.system('rm -r ./CAZY_out/ ./hmmer_out/ ./hmmer_out_EAD/ ./hmmer_out_peptidases/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./TMHMM*/')
+        os.system('rm -r ./hmmer_out/ ./hmmer_out_EAD/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./biolib_results/')
         os.remove('./all_protein_cdhit.faa')
         os.remove('./all_protein_cdhit.faa.clstr')
         os.remove('./all_protein_cdhit_filter.faa')
         os.remove('./all_protein.faa')
-        # os.remove('./all_protein_filter_cazyme.fasta')
-        os.remove('./all_protein_final_tmhmm_shortout.txt')
         os.remove('./all_protein_pfam_protein.fasta')
-        # os.remove('./cazyme_pfam_EAD_peptidases_cdhit.fasta')
-        os.remove('./cazyme_pfam_EAD_peptidases_cdhit.fasta.clstr')
-        os.remove('./cazyme_pfam_EAD_peptidases.fasta')
-        os.remove('./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
+        os.remove('./all_protein_pfam_protein_EAD.fasta')
+        os.remove('./pfam_EAD_cdhit.fasta.clstr')
+        os.remove('./pfam_EAD_cdhit.fasta')
+        os.remove('./pfam_EAD.fasta')
+        os.remove('./all_protein_ut.faa')
 
     elif Args.bacteriaORphage == 'P':
         if Args.workdir[-1] == '/':
@@ -629,12 +691,9 @@ if __name__ == "__main__":
             pass
         else:
             os.mkdir(os.path.dirname(os.path.abspath(Args.workdir)) +'/' + resultdir + '/')
-        
-        
-        path_t = os.path.dirname(sub.getoutput('find ~/ -name lysin_finder.py'))
-        tl = tools(path_t + '/tmhmm/tmhmm-2.0c/bin/tmhmm')
-        
-        
+              
+
+        tl = tools()        
         # step 1 prokka annotates ORFs
         curr_dir = sub.getoutput('pwd')
         os.chdir(Args.workdir)
@@ -685,15 +744,15 @@ if __name__ == "__main__":
         os.system('cat ./phage_faa/* > all_protein_ut.faa')
         
         fa_dict = fasta2dict('./all_protein_ut.faa')
-        filters = ["B","Z","J","O","U","X",'*']
 
+        filters = ["B","Z","J","O","U","X",'*']
         with open('./all_protein.faa','w') as f:
             for key in fa_dict:
                 if all(f not in fa_dict[key] for f in filters):
                     line = key + '\n' + fa_dict[key] + '\n'
                     f.write(line)
         f.close()
-        
+
         # step 4 cdhit cluster
         cmd_4 = tl.run_cdhit('./all_protein.faa','./all_protein_cdhit.faa',Args.cdhit_cutoff)
         tl.run(cmd_4)
@@ -701,30 +760,8 @@ if __name__ == "__main__":
         # step 5 calculate molecular weight
         molecular_weight('./all_protein_cdhit.faa','./all_protein_cdhit_filter.faa', float(Args.MWU),float(Args.MWL))
 
-        # step 6 scan CAZY database
-        cazy_db = Args.cazy_db
-        if cazy_db[-1] == '/':
-            cazy_db = cazy_db
-        else:
-            cazy_db = cazy_db + '/'
-        if cazy_db[0] == '.':
-            if cazy_db[1] == '/':
-                cazy_db_suffix = cazy_db[1:]
-                curr_dir_cazydb = curr_dir
-            elif cazy_db[1] == '.':
-                curr_dir_cazydb = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                cazy_db_suffix = cazy_db[2:]
-        else:
-            cazy_db_suffix = cazy_db
-            curr_dir_cazydb = ''
 
-        cmd_2 = tl.scan_dbscan('./all_protein_cdhit_filter.faa','./CAZY_out/',
-                               curr_dir_cazydb + cazy_db_suffix)
-        tl.run(cmd_2)
-
-        find_cazyme('./all_protein_cdhit_filter.faa','./CAZY_out/overview.txt')
-
-        # step 8 hmmsearch reported lysin structure in pfam
+        # step 6 hmmsearch reported lysin structure in pfam
         if os.path.isdir('./hmmer_out/') == True:
             pass
         else:
@@ -742,10 +779,10 @@ if __name__ == "__main__":
             hmmer_db_suffix = hmmer_db
             curr_dir_hmmerdb = ''
 
-        cmd_3 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
+        cmd_5 = tl.run_hmmsearch('./hmmer_out/all_protein_filter_hmmer_out.txt', Args.hmmer_cutoff,
                                  curr_dir_hmmerdb + hmmer_db_suffix,
                                  './all_protein_cdhit_filter.faa')
-        tl.run(cmd_3)
+        tl.run(cmd_5)
 
         reported_lysin = Args.reported_lysin
         if reported_lysin[0] == '.':
@@ -762,7 +799,7 @@ if __name__ == "__main__":
         find_pfam('./all_protein_cdhit_filter.faa', curr_dir_rp + reported_lysin_suffix)
         
         
-        # step 9 Filter sequence without EAD
+        # step 7 Filter sequences without EAD
         if os.path.isdir('./hmmer_out_EAD/') == True:
             pass
         else:
@@ -780,10 +817,10 @@ if __name__ == "__main__":
             hmmer_db_EAD_suffix = hmmer_db_EAD
             curr_dir_hmmerdb_EAD = ''
 
-        cmd_4 = tl.run_hmmsearch('./hmmer_out_EAD/all_protein_filter_hmmer_out_EAD.txt', Args.hmmer_cutoff,
+        cmd_6 = tl.run_hmmsearch('./hmmer_out_EAD/all_protein_filter_hmmer_out_EAD.txt', Args.hmmer_cutoff,
                                  curr_dir_hmmerdb_EAD + hmmer_db_EAD_suffix,
                                  './all_protein_pfam_protein.fasta')
-        tl.run(cmd_4)
+        tl.run(cmd_6)
 
         reported_lysin_EAD = Args.reported_lysin_EAD
         if reported_lysin_EAD[0] == '.':
@@ -799,67 +836,29 @@ if __name__ == "__main__":
 
         find_pfam_EAD('./all_protein_pfam_protein.fasta', curr_dir_rpe + reported_lysin_EAD_suffix)
         
-            
-        # step 10 Find peptidases
-        if os.path.isdir('./hmmer_out_peptidases/') == True:
-            pass
-        else:
-            os.mkdir('./hmmer_out_peptidases/')
 
-        hmmer_db_peptidases = Args.hmmer_db_peptidases
-        if hmmer_db_peptidases[0] == '.':
-            if hmmer_db_peptidases[1] == '/':
-                hmmer_db_peptidases_suffix = hmmer_db_peptidases[1:]
-                curr_dir_hmmerdb_peptidases = curr_dir
-            elif hmmer_db_peptidases[1] == '.':
-                curr_dir_hmmerdb_peptidases = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                hmmer_db_peptidases_suffix = hmmer_db_peptidases[2:]
-        else:
-            hmmer_db_peptidases_suffix = hmmer_db_peptidases
-            curr_dir_hmmerdb_peptidases = ''
-
-        cmd_5 = tl.run_hmmsearch('./hmmer_out_peptidases/all_protein_filter_hmmer_out_peptidases.txt', Args.hmmer_cutoff,
-                                 curr_dir_hmmerdb_peptidases + hmmer_db_peptidases_suffix,
-                                 './all_protein_cdhit_filter.faa')
-        tl.run(cmd_5)
-
-        reported_lysin_peptidases = Args.reported_lysin_peptidases
-        if reported_lysin_peptidases[0] == '.':
-            if reported_lysin_peptidases[1] == '/':
-                reported_lysin_peptidases_suffix = reported_lysin_peptidases[1:]
-                curr_dir_rpp = curr_dir
-            elif reported_lysin_peptidases[1] == '.':
-                curr_dir_rpp = os.path.abspath(os.path.join(os.path.dirname(curr_dir + '/'), os.path.pardir))
-                reported_lysin_peptidases_suffix = reported_lysin_peptidases[2:]
-        else:
-            reported_lysin_peptidases_suffix = reported_lysin_peptidases
-            curr_dir_rpp = ''
-
-        find_pfam_peptidases('./all_protein_cdhit_filter.faa', curr_dir_rpp + reported_lysin_peptidases_suffix)
-
-        # step 11 combine results of CAZY and pfam
-        os.system('cat all_protein_filter_cazyme.fasta all_protein_pfam_protein_EAD.fasta all_protein_pfam_protein_peptidases.fasta > cazyme_pfam_EAD_peptidases.fasta')
-        cmd_6 = tl.run_cdhit('./cazyme_pfam_EAD_peptidases.fasta', './cazyme_pfam_EAD_peptidases_cdhit.fasta', int(1))
-        tl.run(cmd_6)
+        # step 9 combine results of CAZY and pfam
+        os.system('cat all_protein_pfam_protein_EAD.fasta > pfam_EAD.fasta')
+        cmd_7 = tl.run_cdhit('./pfam_EAD.fasta', './pfam_EAD_cdhit.fasta', int(1))
+        tl.run(cmd_7)
 
         # step 12 remove TMhelix
-        cmd_7 = tl.run_tmhmm('./cazyme_pfam_EAD_peptidases_cdhit.fasta','./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
-        tl.run(cmd_7)
-        detete_TMhelix('./cazyme_pfam_EAD_peptidases_cdhit.fasta','./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
+        cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
+        tl.run(cmd_8)
+        remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
 
         
-        os.system('rm -r ./CAZY_out/ ./hmmer_out/ ./hmmer_out_EAD/ ./hmmer_out_peptidases/ ./phage_faa/ ./prokka_result/ ./TMHMM*/')
+        os.system('rm -r ./hmmer_out/ ./hmmer_out_EAD/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./biolib_results/')
         os.remove('./all_protein_cdhit.faa')
         os.remove('./all_protein_cdhit.faa.clstr')
         os.remove('./all_protein_cdhit_filter.faa')
         os.remove('./all_protein.faa')
-        # os.remove('./all_protein_filter_cazyme.fasta')
-        os.remove('./all_protein_final_tmhmm_shortout.txt')
         os.remove('./all_protein_pfam_protein.fasta')
-        # os.remove('./cazyme_pfam_EAD_peptidases_cdhit.fasta')
-        os.remove('./cazyme_pfam_EAD_peptidases_cdhit.fasta.clstr')
-        os.remove('./cazyme_pfam_EAD_peptidases.fasta')
-        os.remove('./cazyme_pfam_EAD_peptidases_cdhit_TMhelix.out')
+        os.remove('./all_protein_pfam_protein_EAD.fasta')
+        os.remove('./pfam_EAD_cdhit.fasta.clstr')
+        os.remove('./pfam_EAD_cdhit.fasta')
+        os.remove('./pfam_EAD.fasta')
+        os.remove('./all_protein_ut.faa')
 
     else:
         raise('Error, please check parameter "--bp"')
