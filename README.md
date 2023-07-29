@@ -44,7 +44,6 @@ python phatides_prediction.py
   -t Bacteria                                       # prokka kingdom type    
   -hd ./db/hmm/lysin_reported.hmm                   # hmmer database path
   -rl ./db/hmm/lysin_reported.txt                   # reported lysin structures(hmm files)
-  -cd ./db/cazy/db/                                 # cazy database path
   -wkdir ./test/                                    # work directory
   -ml 10000                                         # lower proteins molecular weight
   -mu 40000                                         # upper proteins molecular weight
