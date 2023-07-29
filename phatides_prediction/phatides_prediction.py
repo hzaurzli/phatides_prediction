@@ -415,6 +415,32 @@ def detete_TMhelix(cdhit_fasta,cazyme_pfam_TMhelix):
                 SeqIO.write(element_record, out_file, "fasta")
     input_file.close()
     out_file.close()
+
+
+def dict_slice(adict, start, end):
+    keys = adict.keys()
+    dict_slice = {}
+    for k in list(keys)[start:end]:
+      dict_slice[k] = adict[k]
+    return dict_slice
+  
+
+def Split_fa(fasta_name,tot, num_1, num_2):    
+    dict = fasta2dict(fasta_name)
+    for i in range(1,num_1):
+      dic = dict_slice(dict, int(str(i) + '00') - 100, int(str(i) + '00'))
+      with open('./pfam_EAD_cdhit-' + str(i) + '00.fasta','w') as w:
+        for key in dic:
+          line = key + '\n' + dic[key] + '\n'
+          w.write(line)
+      w.close()
+    
+    with open('./pfam_EAD_cdhit-' + str(int(str(num_1) + '00')) + '.fasta','w') as w:
+      dic = dict_slice(dict, int(str(num_1) + '00'), int(str(num_1) + '00') + int(num_2))
+      for key in dic:
+        line = key + '\n' + dic[key] + '\n'
+        w.write(line)
+    w.close()
     
     
 def remove_TMhelix(TMhelix_path,fa,fa_out):
@@ -662,20 +688,34 @@ if __name__ == "__main__":
         tl.run(cmd_7)
 
         # step 11 remove TMhelix
-        cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
-        tl.run(cmd_8)
-        remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
+        tot = sub.getoutput("grep '>' %s | wc -l" % ('./pfam_EAD_cdhit.fasta'))
+    
+        if int(tot) > 100:
+            num_1 = int(tot)//100
+            num_2 = int(tot)%100
+            Split_fa('./pfam_EAD_cdhit.fasta', tot, num_1, num_2)
+          
+            for i in range(1, int(num_1) + 1):
+               cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit-' + str(i) + '00.fasta')
+               tl.run(cmd_8)
+               
+            os.system('cat ./biolib_results/predicted_topologies.3line* > predicted_topologies.line')
+            remove_TMhelix('./biolib_results/predicted_topologies.line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
+          
+        else:
+            cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
+            tl.run(cmd_8)
+            remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
 
         
         os.system('rm -r ./hmmer_out/ ./hmmer_out_EAD/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./biolib_results/')
+        os.system('rm -r ./pfam_EAD_cdhit*')
         os.remove('./all_protein_cdhit.faa')
         os.remove('./all_protein_cdhit.faa.clstr')
         os.remove('./all_protein_cdhit_filter.faa')
         os.remove('./all_protein.faa')
         os.remove('./all_protein_pfam_protein.fasta')
         os.remove('./all_protein_pfam_protein_EAD.fasta')
-        os.remove('./pfam_EAD_cdhit.fasta.clstr')
-        os.remove('./pfam_EAD_cdhit.fasta')
         os.remove('./pfam_EAD.fasta')
         os.remove('./all_protein_ut.faa')
 
@@ -843,20 +883,34 @@ if __name__ == "__main__":
         tl.run(cmd_7)
 
         # step 12 remove TMhelix
-        cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
-        tl.run(cmd_8)
-        remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
+        tot = sub.getoutput("grep '>' %s | wc -l" % ('./pfam_EAD_cdhit.fasta'))
+    
+        if int(tot) > 100:
+            num_1 = int(tot)//100
+            num_2 = int(tot)%100
+            Split_fa('./pfam_EAD_cdhit.fasta', tot, num_1, num_2)
+          
+            for i in range(1, int(num_1) + 1):
+               cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit-' + str(i) + '00.fasta')
+               tl.run(cmd_8)
+               
+            os.system('cat ./biolib_results/predicted_topologies.3line* > predicted_topologies.line')
+            remove_TMhelix('./biolib_results/predicted_topologies.line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
+          
+        else:
+            cmd_8 = tl.run_deeptmhmm('./pfam_EAD_cdhit.fasta')
+            tl.run(cmd_8)
+            remove_TMhelix('./biolib_results/predicted_topologies.3line','./pfam_EAD_cdhit.fasta','./putative_lysins.fa')
 
         
         os.system('rm -r ./hmmer_out/ ./hmmer_out_EAD/ ./orf_ffn/ ./phispy_out/ ./ppn/ ./prokka_result/ ./biolib_results/')
+        os.system('rm -r ./pfam_EAD_cdhit*')
         os.remove('./all_protein_cdhit.faa')
         os.remove('./all_protein_cdhit.faa.clstr')
         os.remove('./all_protein_cdhit_filter.faa')
         os.remove('./all_protein.faa')
         os.remove('./all_protein_pfam_protein.fasta')
         os.remove('./all_protein_pfam_protein_EAD.fasta')
-        os.remove('./pfam_EAD_cdhit.fasta.clstr')
-        os.remove('./pfam_EAD_cdhit.fasta')
         os.remove('./pfam_EAD.fasta')
         os.remove('./all_protein_ut.faa')
 
